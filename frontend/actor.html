@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actor Analysis - Movie App</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="actor_ai.js"></script>
+</head>
+<body id="main-body" class="bg-slate-50 font-sans text-slate-800 transition-colors duration-500">
+
+    <app-sidebar></app-sidebar>
+
+    <main id="main-content" class="ml-64 p-8 min-h-screen">
+        <div class="max-w-5xl mx-auto">
+            
+            <div class="mb-8 border-b border-slate-200 pb-4">
+                <h1 class="text-3xl font-bold text-slate-800">🎭 Actor Star Power Analysis</h1>
+                <p class="text-slate-500 mt-2">Top 10 actors by revenue dan film-film terkuat dari actor terpilih</p>
+            </div>
+
+            <!-- KPI Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-blue-500 text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Top Actor</div>
+                    <div class="text-2xl font-black text-slate-800" id="m-top-name">-</div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-blue-500 text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Highest Revenue</div>
+                    <div class="text-2xl font-black text-emerald-600" id="m-top-rev">$0</div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm border-t-4 border-t-blue-500 text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Revenue Top 10</div>
+                    <div class="text-2xl font-black text-blue-600" id="m-total-top">$0</div>
+                </div>
+            </div>
+
+            <!-- Main Table & Chart -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8">
+                <h3 class="text-xs font-bold text-slate-400 mb-6 uppercase tracking-wider">TOP 10 ACTORS BY REVENUE</h3>
+                <div class="overflow-x-auto mb-6 border border-slate-200 rounded-lg" id="actorTableContainer"></div>
+                <div id="actorChart" class="w-full"></div>
+            </div>
+
+            <!-- Detail Actor Section -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8 border-t-4 border-t-rose-400">
+                <h3 id="detail-title" class="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">TOP FILMS</h3>
+                <select id="actorSelect" onchange="loadActorFilms(this.value)" class="w-full p-3 border border-slate-300 rounded-lg mb-6 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-rose-400 text-slate-700 font-medium cursor-pointer">
+                    <option value="">Pilih actor untuk lihat film terpopuler</option>
+                </select>
+                <div class="overflow-x-auto mb-6 border border-slate-200 rounded-lg" id="filmTableContainer"></div>
+                <div id="filmChart" class="w-full"></div>
+            </div>
+            
+            <div id="insight-box" class="hidden bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-4 rounded-r-lg mt-6 shadow-sm mb-8"></div>
+            
+            <p class="text-center text-xs text-slate-400 mt-12 mb-4">© 2026 Movie Database Project | President University | Information Systems</p>
+        </div>
+    </main>
+
+    <!-- Chat UI -->
+    <button id="chat-toggle-btn" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all z-50 flex items-center justify-center h-14 w-14">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+        </svg>
+    </button>
+
+    <div id="chat-container" class="hidden fixed bottom-24 right-6 w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 flex flex-col overflow-hidden" style="height: 500px;">
+        <div class="bg-blue-600 text-white p-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <h3 class="font-semibold text-sm">AI INSIGHT ASSISTANT</h3>
+            </div>
+            <button id="close-chat" class="text-white hover:text-slate-200 focus:outline-none">✕</button>
+        </div>
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 flex flex-col gap-3"></div>
+        <div class="p-3 bg-white border-t border-slate-200 flex gap-2">
+            <input type="text" id="chat-input" placeholder="Tanya tentang aktor..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+            <button id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Kirim</button>
+        </div>
+    </div>
+
+    <script>
+        let allTopActors = [];
+        let currentActorFilms = [];
+
+        // Fungsi Universal Pembuat Tabel
+        function createTable(data, containerId, columns) {
+            let html = `<table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                            <thead class="bg-slate-50 border-b border-slate-200"><tr>`;
+            columns.forEach(col => {
+                const align = (col.key === 'actor_name' || col.key === 'title') ? 'text-left' : 'text-right';
+                html += `<th class="p-3 font-semibold text-slate-600 ${align}">${col.key.replace(/_/g, ' ').toUpperCase()}</th>`;
+            });
+            html += `</tr></thead><tbody class="divide-y divide-slate-100">`;
+            
+            data.forEach(row => {
+                html += `<tr class="hover:bg-slate-50 transition-colors">`;
+                columns.forEach(col => {
+                    let val = row[col.key];
+                    const align = (col.key === 'actor_name' || col.key === 'title') ? 'text-left font-medium text-slate-800' : 'text-right text-slate-600';
+                    if (col.key === 'total_revenue') val = "$" + val.toFixed(2);
+                    html += `<td class="p-3 ${align}">${val}</td>`;
+                });
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+            document.getElementById(containerId).innerHTML = html;
+        }
+
+        async function initPage() {
+            try {
+                // Terapkan Tema dari LocalStorage
+                const savedBg = localStorage.getItem('actor_bg_color');
+                const savedText = localStorage.getItem('actor_text_color');
+                if (savedBg) {
+                    document.getElementById('main-body').className = `${savedBg} ${savedText} font-sans transition-colors duration-500`;
+                }
+
+                const res = await fetch('http://127.0.0.1:8000/api/actors/top10');
+                allTopActors = await res.json();
+                
+                // Update KPI Cards
+                document.getElementById('m-top-name').innerText = allTopActors[0].actor_name;
+                document.getElementById('m-top-rev').innerText = `$${allTopActors[0].total_revenue.toFixed(2)}`;
+                const total = allTopActors.reduce((s, a) => s + a.total_revenue, 0);
+                document.getElementById('m-total-top').innerText = `$${total.toFixed(2)}`;
+
+                // Render Tabel Utama (Diperbaiki: menggunakan createTable)
+                createTable(allTopActors, 'actorTableContainer', [
+                    { key: 'actor_id' },
+                    { key: 'actor_name' },
+                    { key: 'total_rentals' },
+                    { key: 'total_revenue' }
+                ]);
+
+                // Isi Dropdown
+                const select = document.getElementById('actorSelect');
+                allTopActors.forEach(a => {
+                    let opt = document.createElement('option');
+                    opt.value = a.actor_id;
+                    opt.innerHTML = a.actor_name;
+                    select.appendChild(opt);
+                });
+
+                // Jalankan render grafik
+                refreshActorCharts('all');
+
+                // Load detail film default
+                document.getElementById('actorSelect').value = allTopActors[0].actor_id;
+                loadActorFilms(allTopActors[0].actor_id);
+
+            } catch (e) { console.error("Gagal memuat data aktor:", e); }
+        }
+
+        window.refreshActorCharts = function(target = 'all') {
+    // 1. Grafik Top 10 Aktor (Target: 'actor')
+    if (target === 'all' || target === 'actor') {
+        if (!allTopActors || allTopActors.length === 0) return;
+        const type = localStorage.getItem('actor_chart_type') || 'bar';
+        renderGenericActorChart(allTopActors, 'actorChart', 'actor_name', 'total_revenue', '#3b82f6', type);
+    }
+
+    // 2. Grafik Detail Film (Target: 'film') - INI YANG DIPERBAIKI UNTUK image_9f2914.png
+    if (target === 'all' || target === 'film') {
+        if (!currentActorFilms || currentActorFilms.length === 0) return;
+        const type = localStorage.getItem('film_chart_type') || 'bar';
+        renderGenericActorChart(currentActorFilms, 'filmChart', 'title', 'total_revenue', '#f43f5e', type);
+    }
+};
+function renderGenericActorChart(data, elementId, labelCol, valCol, color, type) {
+    let trace;
+    const isHorizontal = type === 'bar';
+
+    if (type === 'donut' || type === 'pie') {
+        trace = {
+            labels: data.map(d => d[labelCol]),
+            values: data.map(d => d[valCol]),
+            type: 'pie',
+            hole: type === 'donut' ? 0.5 : 0,
+            marker: { colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe', '#f43f5e', '#fb7185'] }
+        };
+    } else {
+        trace = {
+            x: data.map(d => d[valCol]).slice(0, 10).reverse(),
+            y: data.map(d => d[labelCol]).slice(0, 10).reverse(),
+            type: 'bar', orientation: 'h', marker: { color: color },
+            text: data.map(d => "$" + d[valCol].toFixed(2)).slice(0, 10).reverse(), textposition: 'outside'
+        };
+    }
+
+    const layout = { 
+        margin: { t: 10, b: 40, l: 150, r: 60 }, height: 450,
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: localStorage.getItem('actor_text_color') === 'text-white' ? '#fff' : '#334155' }
+    };
+    Plotly.newPlot(elementId, [trace], layout, { displayModeBar: false, responsive: true });
+}
+
+        async function loadActorFilms(actorId) {
+    if (!actorId) return;
+    try {
+        const res = await fetch(`http://127.0.0.1:8000/api/actors/${actorId}/films`);
+        currentActorFilms = await res.json(); // Simpan ke variabel global
+        
+        const actorName = allTopActors.find(a => a.actor_id == actorId).actor_name;
+        document.getElementById('detail-title').innerText = `TOP FILMS — ${actorName}`;
+
+        createTable(currentActorFilms, 'filmTableContainer', [
+            { key: 'title' },
+            { key: 'total_rentals' },
+            { key: 'total_revenue' }
+        ]);
+
+        // Panggil refresh khusus bagian film
+        refreshActorCharts('film');
+
+        const insight = document.getElementById('insight-box');
+        insight.classList.remove('hidden');
+        insight.innerHTML = `<span class="text-xl mr-2">💡</span> Aktor <b>${actorName}</b> memiliki kontribusi revenue yang stabil.`;
+    } catch (e) { console.error(e); }
+}
+
+        // Inisialisasi halaman
+        initPage();
+    </script>
+</body>
+</html>

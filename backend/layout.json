@@ -1,0 +1,12 @@
+{
+  "theme": {
+    "bg_color": "bg-slate-50",
+    "card_color": "bg-white",
+    "text_color": "text-slate-800"
+  },
+  "kpi_cards": [
+    {"id": "movies", "title": "Total Film", "order": 1, "visible": true},
+    {"id": "avg_price", "title": "Rata-rata Harga", "order": 2, "visible": true},
+    {"id": "genres", "title": "Total Genre", "order": 3, "visible": true}
+  ]
+}

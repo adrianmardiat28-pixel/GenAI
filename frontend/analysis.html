@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis - Movie Demand App</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="analysis_ai.js"></script>
+    <script src="analysis.js"></script> 
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+        
+        /* Typography dan Styling Khas Halaman Analysis */
+        .page-header { padding: 28px 0 8px 0; border-bottom: 2px solid #F0F0F0; margin-bottom: 28px; font-family: 'DM Sans', sans-serif;}
+        .page-title { font-size: 28px; font-weight: 700; color: #111827; margin: 0; letter-spacing: -0.5px; }
+        .page-subtitle { font-size: 14px; color: #6B7280; margin: 4px 0 0 0; }
+        .section-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #9CA3AF; margin-bottom: 12px; font-family: 'DM Sans', sans-serif; }
+        
+        .store-badge-1 { display: inline-block; background: #EBF2FF; color: #4F8EF7; border: 1.5px solid #4F8EF7; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; margin-bottom: 16px; font-family: 'DM Sans', sans-serif;}
+        .store-badge-2 { display: inline-block; background: #FFF0F0; color: #F76E6E; border: 1.5px solid #F76E6E; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; margin-bottom: 16px; font-family: 'DM Sans', sans-serif;}
+        
+        .compare-table { width: 100%; border-collapse: collapse; font-size: 14px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); font-family: 'DM Sans', sans-serif; background: white;}
+        .compare-table th { background: #F9FAFB; color: #374151; font-weight: 600; padding: 12px 16px; text-align: left; border-bottom: 1px solid #E5E7EB; }
+        .compare-table td { padding: 12px 16px; border-bottom: 1px solid #F3F4F6; background: #FFFFFF; color: #1F2937; vertical-align: top; }
+        .store1-val { color: #4F8EF7; font-weight: 600; }
+        .store2-val { color: #F76E6E; font-weight: 600; }
+        .section-divider { border: none; border-top: 1px solid #F0F0F0; margin: 28px 0; }
+        
+        .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 20px;}
+        .chart-box { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); color: #1f2937;}
+        
+        #loadingIndicator { text-align: center; padding: 50px; font-size: 18px; color: #666; background: white; border-radius: 10px; border: 2px dashed #ccc; margin-top: 20px;}
+    </style>
+</head>
+<body class="bg-slate-50 transition-colors duration-500">
+
+    <app-sidebar></app-sidebar>
+
+    <main id="main-content" class="main-content ml-64 p-8 min-h-screen bg-[#fafbfc] transition-colors duration-500">
+        
+        <div class="max-w-6xl mx-auto">
+            <div class="page-header">
+                <p class="page-title">📊 Store Analysis</p>
+                <p class="page-subtitle">Perbandingan performa Store 1 vs Store 2 — genre, rating, film, dan trend bulanan</p>
+            </div>
+
+            <div id="loadingIndicator">
+                ⏳ Sedang memuat data analitik dan memproses grafik... Mohon tunggu.
+            </div>
+            
+            <div id="analysisContent" style="display: none;">
+                
+                <p class="section-label">Ringkasan Perbandingan</p>
+                <table class="compare-table" id="summaryTable"></table>
+                <hr class="section-divider">
+
+                <p class="section-label">Top Genre per Store</p>
+                <div class="chart-grid">
+                    <div class="chart-box"><span class="store-badge-1">🔵 Store 1</span><div id="genreChart1"></div></div>
+                    <div class="chart-box"><span class="store-badge-2">🔴 Store 2</span><div id="genreChart2"></div></div>
+                </div>
+                <hr class="section-divider">
+
+                <p class="section-label">Distribusi Rating per Store</p>
+                <div class="chart-grid">
+                    <div class="chart-box"><span class="store-badge-1">🔵 Store 1</span><div id="ratingChart1"></div></div>
+                    <div class="chart-box"><span class="store-badge-2">🔴 Store 2</span><div id="ratingChart2"></div></div>
+                </div>
+                <hr class="section-divider">
+
+                <p class="section-label">Top 10 Film per Store</p>
+                <div class="chart-grid">
+                    <div class="chart-box"><span class="store-badge-1">🔵 Store 1</span><div id="filmChart1"></div></div>
+                    <div class="chart-box"><span class="store-badge-2">🔴 Store 2</span><div id="filmChart2"></div></div>
+                </div>
+                <hr class="section-divider">
+
+                <p class="section-label">Trend Rental Bulanan — Store 1 vs Store 2</p>
+                <div class="chart-box" style="margin-bottom: 20px;">
+                    <div id="trendChart"></div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="chart-box">
+                        <span class="store-badge-1">🔵 Store 1 — Detail Bulanan</span>
+                        <table class="compare-table" id="trendTable1" style="font-size: 13px;"></table>
+                    </div>
+                    <div class="chart-box">
+                        <span class="store-badge-2">🔴 Store 2 — Detail Bulanan</span>
+                        <table class="compare-table" id="trendTable2" style="font-size: 13px;"></table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <button id="chat-toggle-btn" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all z-50 flex items-center justify-center h-14 w-14">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+        </svg>
+    </button>
+
+    <div id="chat-container" class="hidden fixed bottom-24 right-6 w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 flex flex-col overflow-hidden" style="height: 500px;">
+        <div class="bg-blue-600 text-white p-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <h3 class="font-semibold text-sm">AI INSIGHT ASSISTANT</h3>
+            </div>
+            <button id="close-chat" class="text-white hover:text-slate-200 focus:outline-none">✕</button>
+        </div>
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 flex flex-col gap-3">
+            <div class="flex justify-start">
+                <div class="bg-white border border-slate-200 text-slate-800 p-3 rounded-lg rounded-bl-none text-sm shadow-sm max-w-[85%]">
+                    Halo! Saya siap menganalisis grafik perbandingan performa Store 1 dan Store 2 di halaman ini. Ada yang bisa saya bantu?
+                </div>
+            </div>
+        </div>
+        <div class="p-3 bg-white border-t border-slate-200 flex gap-2">
+            <input type="text" id="chat-input" placeholder="Tanya tentang data atau ubah warna..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow">
+            <button id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">Kirim</button>
+        </div>
+    </div>
+
+</body>
+</html>

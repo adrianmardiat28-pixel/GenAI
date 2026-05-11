@@ -1,0 +1,44 @@
+/* --- style.css (Optimized for Tailwind) --- */
+
+/* 1. Global Reset & Base */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; 
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    /* Efek transisi smooth saat AI mengganti warna background */
+    transition: background-color 0.7s ease, color 0.7s ease; 
+}
+
+/* 2. Custom Scrollbar (Opsional, agar dashboard terlihat lebih premium) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; 
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; 
+}
+
+/* 3. Helper Classes (Yang masih dipakai di beberapa halaman) */
+.custom-divider { 
+    border: 0; 
+    height: 1px; 
+    background-color: #e2e8f0; 
+    margin: 20px 0; 
+}
+
+/* AI Chatbot Custom Animations */
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+}
+#chat-toggle-btn {
+    animation: pulse-glow 2s infinite;
+}

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Intelligence Dashboard</title>
+    
+    <!-- Library & Scripts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="dashboard_ai.js"></script>
+    
+    <style>
+        /* Agar transisi warna background dari AI terlihat smooth */
+        body {
+            transition: background-color 0.7s ease, color 0.7s ease;
+        }
+
+        /* Container utama agar tidak tertutup sidebar (w-64) */
+        .main-content {
+            margin-left: 16rem; /* Sama dengan ml-64 di Tailwind */
+            min-height: 100vh;
+            transition: margin 0.3s ease;
+        }
+
+        /* Membuat kartu semi-transparan agar warna background body "tembus" */
+        .metric-card { 
+            background-color: rgba(255, 255, 255, 0.75); 
+            backdrop-filter: blur(10px);
+            padding: 24px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            flex: 1; 
+            transition: all 0.5s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Border warna kustom untuk kartu */
+        .blue-border { border-left: 6px solid #3b82f6; }
+        .green-border { border-left: 6px solid #22c55e; }
+        .orange-border { border-left: 6px solid #f59e0b; }
+
+        /* Styling Section Putih */
+        .white-section {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.5s ease;
+        }
+
+        /* Badges */
+        .rate-badge { background-color: #10b981; color: white; padding: 4px 12px; border-radius: 9999px; font-weight: bold; font-size: 12px; }
+        .rating-badge { background-color: #64748b; color: white; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .genre-badge { background-color: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 9999px; font-size: 12px; border: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <!-- Web Component Sidebar (Definisinya ada di sidebar.js) -->
+    <app-sidebar></app-sidebar>
+
+    <main class="main-content p-8">
+        
+        <!-- VIEW 1: DASHBOARD UTAMA -->
+        <div id="dashboard-view">
+            <div class="mb-8">
+                <h1 class="text-4xl font-extrabold tracking-tight">🎬 Movie Inventory Dashboard</h1>
+                <p class="text-slate-500 mt-2 text-lg">Analisis stok dan manajemen inventaris kaset film.</p>
+            </div>
+
+            <!-- A. Metrics Section (ID Penting untuk Reorder AI) -->
+            <div class="flex flex-wrap gap-6 mb-8" id="metrics-container">
+                <!-- Data akan diisi secara dinamis oleh function renderMetrics() -->
+            </div>
+
+            <!-- B. Chart Section -->
+            <div class="mb-10">
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <span>📈</span> Analisis Inventaris
+                </h2>
+                <div id="chart-container" class="white-section" style="min-height: 400px;">
+                    <!-- Plotly Chart akan muncul di sini -->
+                </div>
+            </div>
+
+            <!-- C. Table Section -->
+            <div>
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <span>📑</span> Daftar Inventaris Film
+                </h2>
+                <div class="white-section">
+                    <div id="table-container" class="overflow-x-auto">
+                        <p class="text-center p-10 text-slate-400 italic">⏳ Menghubungkan ke database dvdrental...</p>
+                    </div>
+                    
+                    <!-- Pagination Controls -->
+                    <div class="flex justify-between items-center mt-6 pt-6 border-t border-slate-100">
+                        <button id="btn-prev" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 transition-all shadow-md" onclick="changePage(-1)">
+                            ⬅️ Sebelumnya
+                        </button>
+                        <span id="page-info" class="text-sm font-semibold text-slate-600 bg-slate-100 px-4 py-2 rounded-full">
+                            Memuat halaman...
+                        </span>
+                        <button id="btn-next" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 transition-all shadow-md" onclick="changePage(1)">
+                            Berikutnya ➡️
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: DETAIL FILM (Hidden by Default) -->
+        <div id="detail-view" style="display: none;" class="max-w-5xl mx-auto">
+            <button onclick="closeDetail()" class="mb-8 bg-slate-200 text-slate-700 px-6 py-2 rounded-lg font-bold hover:bg-slate-300 transition-all">
+                ⬅️ Kembali ke Daftar Film
+            </button>
+            <div id="detail-content" class="white-section"></div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-16 pt-8 border-t border-slate-200 text-center">
+            <p class="text-slate-400 text-sm italic">© 2026 Movie Rental System | Adrian Alrizqullah Mardiat - Information Systems</p>
+        </footer>
+
+    </main>
+
+    <!-- AI CHATBOT COMPONENT -->
+    <!-- Tombol Buka Chat -->
+    <button id="chat-toggle-btn" class="fixed bottom-8 right-8 bg-blue-600 text-white p-5 rounded-full shadow-2xl hover:scale-110 transition-all z-50 animate-bounce">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+    </button>
+
+    <!-- Chat Window -->
+    <div id="chat-container" class="fixed bottom-28 right-8 w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 hidden z-50 overflow-hidden transition-all duration-300">
+        <div class="bg-blue-600 p-4 flex justify-between items-center text-white">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+                <h3 class="font-bold text-xs uppercase tracking-widest">AI Insight Assistant</h3>
+            </div>
+            <button id="close-chat" class="hover:bg-blue-700 p-1 rounded transition-colors">✕</button>
+        </div>
+        <div id="chat-messages" class="h-96 overflow-y-auto p-4 space-y-4 bg-slate-50 text-sm">
+            <!-- Pesan akan muncul di sini -->
+        </div>
+        <div class="p-4 border-t bg-white">
+            <div class="flex gap-2">
+                <input type="text" id="chat-input" placeholder="Tanya tentang data atau ubah warna..." class="flex-1 p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <button id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors font-bold">Kirim</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logika Dashboard (Data Fetching & Rendering) -->
+    <script>
+        let allMovies = [];
+        let currentPage = 0;
+        const rowsPerPage = 10;
+        let currentDetailMovie = null; // Variabel penyimpan data film yang dibuka
+
+        // Fetch Data dari FastAPI (Port 8000)
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/movies');
+                allMovies = await response.json();
+                renderMetrics();
+                renderChart();
+                renderTable();
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                document.getElementById('table-container').innerHTML = 
+                    `<div class="p-10 text-center"><p class="text-red-500 font-bold">❌ Gagal terhubung ke Backend Python.</p><p class="text-slate-400 text-xs">Pastikan uvicorn main:app --reload sudah berjalan.</p></div>`;
+            }
+        }
+
+        // Render Kartu KPI
+        function renderMetrics() {
+            const total = allMovies.length;
+            const avg = allMovies.reduce((sum, m) => sum + parseFloat(m.rental_rate), 0) / (total || 1);
+            const genres = new Set(allMovies.map(m => m.genre).filter(g => g));
+
+            document.getElementById('metrics-container').innerHTML = `
+                <div id="kpi-total-film" class="metric-card blue-border" style="order: 1;">
+                    <div class="metric-title text-blue-600">Total Film</div>
+                    <div class="metric-value">${total.toLocaleString('id-ID')}</div>
+                </div>
+                <div id="kpi-avg-price" class="metric-card green-border" style="order: 2;">
+                    <div class="metric-title text-green-600">Rata-rata Harga</div>
+                    <div class="metric-value">$${avg.toFixed(2)}</div>
+                </div>
+                <div id="kpi-total-genre" class="metric-card orange-border" style="order: 3;">
+                    <div class="metric-title text-orange-600">Total Genre</div>
+                    <div class="metric-value">${genres.size}</div>
+                </div>
+            `;
+
+            // Terapkan posisi tersimpan jika ada di memori browser
+            const savedPositions = localStorage.getItem('dashboard_kpi_positions');
+            if (savedPositions) {
+                try {
+                    const positions = JSON.parse(savedPositions);
+                    positions.forEach(item => {
+                        const el = document.getElementById(item.id);
+                        if (el) el.style.order = item.order;
+                    });
+                } catch (e) {
+                    console.error("Gagal memuat posisi KPI", e);
+                }
+            }
+        }
+
+        // Render Grafik Plotly
+        function renderChart() {
+            const groups = {};
+            allMovies.forEach(m => {
+                if(m.rating && m.length) {
+                    if(!groups[m.rating]) groups[m.rating] = { sum: 0, count: 0 };
+                    groups[m.rating].sum += m.length;
+                    groups[m.rating].count += 1;
+                }
+            });
+            const x = Object.keys(groups);
+            const y = x.map(r => (groups[r].sum / groups[r].count).toFixed(1));
+
+            // Ambil tipe diagram dari localStorage, jika kosong default ke 'bar'
+            const savedType = localStorage.getItem('dashboard_diagram_type') || 'bar';
+            
+            let trace = {};
+            
+            // Konfigurasi khusus jika AI menyuruh membuat diagram Pie
+            if (savedType === 'pie') {
+                trace = {
+                    labels: x,
+                    values: y,
+                    type: 'pie',
+                    textinfo: 'label+percent',
+                    marker: { colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] },
+                    hole: 0.4 // Membuatnya menjadi Donut Chart agar lebih modern (opsional)
+                };
+            } 
+            // Konfigurasi untuk Bar dan Line
+            else {
+                trace = {
+                    x: x, 
+                    y: y, 
+                    type: savedType, // akan menjadi 'bar' atau 'line'
+                    text: savedType === 'bar' ? y.map(v => v + ' mnt') : undefined,
+                    textposition: 'outside',
+                    marker: { color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] },
+                    line: savedType === 'line' ? { color: '#3b82f6', width: 4, shape: 'spline' } : undefined
+                };
+            }
+
+            Plotly.newPlot('chart-container', [trace], {
+                title: { text: 'Rata-rata Durasi Film Berdasarkan Rating', font: { size: 16, color: '#475569' } },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                margin: { t:60, b:40, l:50, r:20 }
+            }, {displayModeBar: false});
+        }
+
+        // Render Tabel Film
+        function renderTable() {
+            const start = currentPage * rowsPerPage;
+            const data = allMovies.slice(start, start + rowsPerPage);
+            
+            let html = `
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-slate-100 bg-slate-50/50">
+                            <th class="p-4 text-slate-600 font-bold">Judul Film</th>
+                            <th class="p-4 text-slate-600 font-bold">Genre</th>
+                            <th class="p-4 text-slate-600 font-bold text-center">Rating</th>
+                            <th class="p-4 text-slate-600 font-bold text-center">Harga</th>
+                            <th class="p-4 text-slate-600 font-bold text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(m => {
+                html += `
+                    <tr class="border-b border-slate-50 hover:bg-white/50 transition-colors">
+                        <td class="p-4 font-bold text-slate-800">${m.title}</td>
+                        <td class="p-4"><span class="genre-badge">${m.genre || '-'}</span></td>
+                        <td class="p-4 text-center"><span class="rating-badge">${m.rating}</span></td>
+                        <td class="p-4 text-center"><span class="rate-badge">$${m.rental_rate}</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="openDetail(${m.film_id})" class="text-blue-600 font-bold hover:underline">Detail</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            document.getElementById('table-container').innerHTML = html;
+            document.getElementById('page-info').innerText = `Halaman ${currentPage + 1} dari ${Math.ceil(allMovies.length / rowsPerPage)}`;
+            document.getElementById('btn-prev').disabled = currentPage === 0;
+            document.getElementById('btn-next').disabled = (start + rowsPerPage) >= allMovies.length;
+        }
+
+        function changePage(dir) { currentPage += dir; renderTable(); window.scrollTo({ top: 400, behavior: 'smooth' }); }
+        
+        // --- FUNGSI DETAIL FILM ---
+        function openDetail(film_id) {
+            const movie = allMovies.find(m => m.film_id === film_id);
+            if (!movie) return;
+            
+            currentDetailMovie = movie; // Simpan ke memori agar AI tahu
+
+            // Sembunyikan Dashboard, Munculkan Detail
+            document.getElementById('dashboard-view').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Render konten detail
+            document.getElementById('detail-content').innerHTML = `
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="w-full md:w-1/3 bg-slate-200 rounded-xl h-96 flex items-center justify-center text-slate-400 text-7xl shadow-inner border-4 border-white">
+                        🎬
+                    </div>
+                    <div class="w-full md:w-2/3">
+                        <h2 class="text-4xl font-extrabold text-slate-800 mb-4">${movie.title}</h2>
+                        <div class="flex flex-wrap gap-3 mb-6">
+                            <span class="genre-badge text-sm">${movie.genre || 'Tidak diketahui'}</span>
+                            <span class="rating-badge text-sm p-2">${movie.rating}</span>
+                            <span class="rate-badge text-sm p-2">$${movie.rental_rate}</span>
+                            <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold border border-slate-200">⏳ ${movie.length || 0} Menit</span>
+                        </div>
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6 shadow-sm">
+                            <p class="text-slate-700 leading-relaxed">
+                                "<strong>${movie.title}</strong> adalah sebuah film bergenre <strong>${movie.genre || 'Umum'}</strong> dengan rating <strong>${movie.rating}</strong>. 
+                                Film ini memiliki durasi tayang selama <strong>${movie.length || 0} menit</strong> dan saat ini disewakan dengan harga <strong>$${movie.rental_rate}</strong>."
+                            </p>
+                        </div>
+                        <h3 class="font-bold text-lg mb-3 border-b-2 border-slate-100 pb-2 flex items-center gap-2">
+                            <span>📌</span> Spesifikasi Inventaris
+                        </h3>
+                        <ul class="space-y-3 text-slate-600">
+                            <li class="flex justify-between bg-slate-50 p-2 rounded"><strong>ID Kaset:</strong> <span>#${movie.film_id}</span></li>
+                            <li class="flex justify-between bg-slate-50 p-2 rounded"><strong>Kategori:</strong> <span>${movie.genre || '-'}</span></li>
+                            <li class="flex justify-between bg-slate-50 p-2 rounded"><strong>Durasi:</strong> <span>${movie.length || 0} Menit</span></li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeDetail() {
+            currentDetailMovie = null; // Hapus dari memori saat ditutup
+            document.getElementById('detail-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'block';
+        }
+        
+        // Menjalankan fetch data saat halaman siap
+        fetchDashboardData();
+    </script>
+</body>
+</html>
