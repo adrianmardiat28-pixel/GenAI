@@ -1,21 +1,21 @@
 # backend/app.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from database import fetch_data
+from backend.database import fetch_data
 import json
 
 # --- IMPORT ROUTER ---
-from analysis_api import router as analysis_router
-from predict_api import router as predict_router, model as predict_model
-from revenue_api import router as revenue_router
-from actor_api import router as actor_router    
-from chat_dashboard_api import router as chat_dashboard_router
-from analysis_api import router as analysis_router
-from chat_analysis_api import router as chat_analysis_router
-from chat_prediction_api import router as chat_prediction_router
-from chat_revenue_api import router as chat_revenue_router
-from chat_actor_api import router as chat_actor_router
-from chat_ai_api import router as chat_ai_router
+# --- IMPORT ROUTER ---
+from backend.analysis_api import router as analysis_router
+from backend.predict_api import router as predict_router, model as predict_model
+from backend.revenue_api import router as revenue_router
+from backend.actor_api import router as actor_router
+from backend.chat_dashboard_api import router as chat_dashboard_router
+from backend.chat_analysis_api import router as chat_analysis_router
+from backend.chat_prediction_api import router as chat_prediction_router
+from backend.chat_revenue_api import router as chat_revenue_router
+from backend.chat_actor_api import router as chat_actor_router
+from backend.chat_ai_api import router as chat_ai_router
 app = FastAPI(title="Movie Demand API")
 
 app.add_middleware(
