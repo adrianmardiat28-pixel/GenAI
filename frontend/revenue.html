@@ -15,6 +15,10 @@
         /* Kita bisa mempertahankan sebagian styling khusus, 
            tapi kebanyakan sudah diganti dengan class Tailwind agar lebih rapi */
         .metric-box { background: #f0fdf4; border-left: 5px solid #10b981; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 20px; }
+        
+        /* Hide scrollbar for suggestion chips */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800">
@@ -68,13 +72,28 @@
             </div>
             <button id="close-chat" class="text-white hover:text-slate-200 focus:outline-none">✕</button>
         </div>
+        
         <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 flex flex-col gap-3">
             <div class="flex justify-start">
                 <div class="bg-white border border-slate-200 text-slate-800 p-3 rounded-lg rounded-bl-none text-sm shadow-sm max-w-[85%]">
-                    Halo! Halaman ini memuat data finansial. Kamu bisa bertanya tentang tren pendapatan bulanan atau mana film yang paling menguntungkan!
+                    Halo! Halaman ini memuat data finansial. Kamu bisa meminta saya memprediksi pendapatan berdasarkan rentang waktu tertentu!
                 </div>
             </div>
         </div>
+
+        <!-- Suggestion Chips Dinamis -->
+        <div class="px-3 py-2 bg-slate-50 border-t border-slate-200 flex gap-2 overflow-x-auto hide-scrollbar">
+            <button onclick="document.getElementById('chat-input').value='Tolong prediksi tren revenue untuk 1 bulan ke depan!'; document.getElementById('send-btn').click();" class="whitespace-nowrap bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-emerald-200 transition-colors border border-emerald-200 shadow-sm">
+                🔮 1 Bulan
+            </button>
+            <button onclick="document.getElementById('chat-input').value='Tolong prediksi tren revenue untuk 3 bulan ke depan!'; document.getElementById('send-btn').click();" class="whitespace-nowrap bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-emerald-200 transition-colors border border-emerald-200 shadow-sm">
+                🔮 3 Bulan
+            </button>
+            <button onclick="document.getElementById('chat-input').value='Tolong prediksi tren revenue untuk 6 bulan ke depan!'; document.getElementById('send-btn').click();" class="whitespace-nowrap bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-semibold hover:bg-emerald-200 transition-colors border border-emerald-200 shadow-sm">
+                🔮 6 Bulan
+            </button>
+        </div>
+
         <div class="p-3 bg-white border-t border-slate-200 flex gap-2">
             <input type="text" id="chat-input" placeholder="Tanya tentang revenue, tren, atau genre..." class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow">
             <button id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">Kirim</button>
@@ -82,8 +101,6 @@
     </div>
 
     <script>
-// Gantikan blok <script> di revenue.html dengan ini:
-
 let globalRevenueData = { daily: [], movies: [], genres: [] };
 
 async function loadRevenueData() {

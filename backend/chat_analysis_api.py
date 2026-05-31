@@ -8,7 +8,7 @@ from analysis_api import get_full_analysis
 
 router = APIRouter()
 
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # Global chat history untuk mempertahankan konteks percakapan

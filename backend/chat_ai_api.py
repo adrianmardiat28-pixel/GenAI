@@ -10,7 +10,7 @@ from typing import Optional, List, Dict
 from database import fetch_data
 
 router = APIRouter()
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 DB_CONFIG = {

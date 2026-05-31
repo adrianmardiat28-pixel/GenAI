@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         closeChat.addEventListener('click', () => chatContainer.classList.add('hidden'));
     }
 
-    // --- 3. MODUL KONTROL UI (Warna & Grafik) ---
+    // --- 3. MODUL KONTROL UI (Warna, Grafik, & PREDIKSI) ---
     function applyAIChanges(layout) {
         if (!layout) return;
 
@@ -37,8 +37,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
         }
+        const months = layout.prediction.months || 3;
+        // B. Kontrol Prediksi Time Series (Transformer Forecasting)
+        // TAMBAHAN BARU: Membaca array prediksi dari AI dan menggambar garis putus-putus
+        if (layout.prediction && layout.prediction.future_dates) {
+            console.log("[AI] Memproses data prediksi Time Series...");
+            
+            // 1. Ambil data historis dari variabel global (dari revenue.html)
+            const histDates = globalRevenueData.daily.map(d => d.date);
+            const histValues = globalRevenueData.daily.map(d => d.daily_revenue);
 
-        // B. Kontrol Tipe Grafik Per Bagian
+            // Trace 1: Data Historis (Garis Solid)
+            const traceHistorical = {
+                x: histDates,
+                y: histValues,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Historical Revenue',
+                line: { color: '#10b981', width: 3 }, // Warna hijau emerald
+                marker: { size: 5 }
+            };
+
+            // Trace 2: Data Prediksi AI (Garis Putus-putus)
+            let futDates = [...layout.prediction.future_dates];
+            let futValues = [...layout.prediction.future_values];
+
+            // Trik UI: Sambungkan titik terakhir historis ke titik pertama prediksi agar nyambung
+            if (histDates.length > 0) {
+                futDates.unshift(histDates[histDates.length - 1]);
+                futValues.unshift(histValues[histValues.length - 1]);
+            }
+
+            const tracePrediction = {
+                x: futDates,
+                y: futValues,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'AI Forecast (Transformer)',
+                line: { color: '#f59e0b', width: 3, dash: 'dashdot' }, // Warna oranye, garis putus-putus
+                marker: { size: 7, symbol: 'diamond' }
+            };
+
+            // 2. Timpa chart lama (dailyChart) dengan chart gabungan ini
+            Plotly.newPlot('dailyChart', [traceHistorical, tracePrediction], {
+                margin: { t: 30, b: 40, l: 50, r: 20 },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                title: { 
+                    text: `📈 Revenue Forecast (Next ${months} Months)`, // Judul Dinamis!
+                    font: { size: 14, color: '#334155' } 
+                },
+                legend: { orientation: 'h', y: -0.2 },
+                // PERBAIKAN GRAFIK DI SINI:
+                xaxis: { 
+                    type: 'date',  // Memaksa Plotly membaca sebagai Tanggal (menghilangkan bug 1.171T)
+                    tickformat: '%Y-%m-%d'
+                },
+                yaxis: { 
+                    rangemode: 'tozero', // Mencegah sumbu Y meluncur ke angka negatif
+                    tickformat: '$,.0f'
+                }
+            });
+
+            return; // Hentikan fungsi di sini agar chart prediksi tidak tertimpa refresh biasa
+        }
+
+        // C. Kontrol Tipe Grafik Per Bagian
         if (layout.diagram_type && layout.target_chart) {
             const target = layout.target_chart; // 'daily', 'movie', atau 'genre'
             localStorage.setItem(`${target}_chart_type`, layout.diagram_type);

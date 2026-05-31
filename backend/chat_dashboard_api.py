@@ -10,7 +10,7 @@ import traceback
 
 router = APIRouter()
 
-GROQ_API_KEY = "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" # API Key milikmu
+GROQ_API_KEY = "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" # API Key milikmu
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 chat_history: List[Dict[str, str]] = []
