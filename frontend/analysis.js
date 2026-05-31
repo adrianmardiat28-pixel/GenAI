@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAnalysis() {
         try {
-            const res = await fetch('http://127.0.0.1:8000/api/analysis');
+            const res = await fetch('/api/analysis');
             const data = await res.json();
             window.analysisData = data; 
             

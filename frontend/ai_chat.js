@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const res = await fetch('http://127.0.0.1:8000/chat-ai', {
+            const res = await fetch('/api/chat-ai', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt: prompt, existing_charts: [] })

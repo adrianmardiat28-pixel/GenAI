@@ -83,7 +83,7 @@ function applyAIChanges(layout) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const res = await fetch('http://127.0.0.1:8000/chat-analysis', {
+            const res = await fetch('/api/chat-analysis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt: prompt, dashboard_context: "Halaman Analysis Store" })
